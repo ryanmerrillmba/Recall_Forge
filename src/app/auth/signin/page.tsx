@@ -3,27 +3,79 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { createClientSupabase } from '@/lib/supabase';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const router = useRouter();
+  const supabase = createClientSupabase();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     
-    // TODO: Implement Supabase authentication
     try {
-      // Placeholder for auth logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Sign in attempt:', { email });
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) {
+        console.error('Auth error:', authError);
+        if (authError.message.includes('Invalid login credentials')) {
+          setError('Hmm, that email and password don\'t match. Let\'s try again!');
+        } else if (authError.message.includes('Email not confirmed')) {
+          setError('Please check your email and click the verification link first!');
+        } else if (authError.message.includes('Too many requests')) {
+          setError('Too many attempts! Please wait a moment before trying again.');
+        } else {
+          setError('Something went wrong. Let\'s double-check that email and password!');
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        console.log('User signed in successfully:', data.user.id);
+        
+        // Check if user profile exists
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError && profileError.code === 'PGRST116') {
+          // Profile doesn't exist - this shouldn't happen if they signed up properly
+          console.warn('User profile not found. This user may need to complete signup.');
+          setError('Your account setup is incomplete. Please contact support or try signing up again.');
+          setIsLoading(false);
+          return;
+        } else if (profileError) {
+          console.error('Error checking user profile:', profileError);
+          setError('Something went wrong checking your account. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('User profile found:', userProfile);
+        
+        // Redirect to dashboard
+        router.push('/dashboard');
+      }
     } catch (err) {
-      setError('Let\'s double-check that email and password!');
+      console.error('Unexpected error:', err);
+      setError('Something unexpected went wrong. Please try again!');
     } finally {
       setIsLoading(false);
     }
@@ -78,35 +130,48 @@ export default function SignInPage() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  className="w-full pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
-                {error}
+              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm animate-bounce-in flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Oops! Let's fix this:</p>
+                  <p>{error}</p>
+                </div>
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full btn-primary py-4 text-lg font-child"
+              className="w-full py-4 text-lg font-bold font-child bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white border-none shadow-xl hover:shadow-2xl hover:from-blue-600 hover:via-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 focus:ring-4 focus:ring-blue-300"
               disabled={isLoading}
             >
               {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-3">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Getting ready for your adventure!
                 </div>
               ) : (
-                'Sign In ✨'
+                '✨ Sign In to Your Adventure'
               )}
             </Button>
 
@@ -120,8 +185,11 @@ export default function SignInPage() {
           <div className="mt-8 text-center">
             <p className="text-gray-600 text-sm mb-4">New to RecallForge?</p>
             <Link href="/auth/signup">
-              <Button className="btn-secondary w-full py-4 text-lg font-child">
-                Create Account 🚀
+              <Button 
+                variant="outline"
+                className="w-full py-4 text-lg font-semibold font-child border-2 border-green-500 text-green-600 bg-white hover:bg-green-500 hover:text-white hover:border-green-600 transition-all transform hover:scale-105 shadow-md hover:shadow-lg focus:ring-4 focus:ring-green-200"
+              >
+                🚀 Create Your Family Account
               </Button>
             </Link>
           </div>

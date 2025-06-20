@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "setup": "node scripts/setup.js setup",
+    "setup:health": "node scripts/setup.js health",
+    "db:migrate": "node scripts/migrate.js",
+    "db:validate": "node scripts/migrate.js validate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
@@ -15,6 +19,7 @@
     "@supabase/auth-helpers-nextjs": "^0.8.7",
     "@supabase/supabase-js": "^2.38.0",
     "clsx": "^2.0.0",
+    "dotenv": "^16.5.0",
     "lucide-react": "^0.294.0",
     "next": "^15.3.4",
     "openai": "^4.20.1",

@@ -242,7 +242,7 @@ body {
   background: var(--gradient-button);
   border: none;
   border-radius: var(--radius-child);
-  color: white;
+  color: white !important;
   font-weight: 600;
   padding: 16px 32px;
   font-size: 18px;
@@ -251,15 +251,24 @@ body {
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-xl);
+  color: white !important;
 }
 
 .btn-primary:active {
   transform: translateY(0);
+  color: white !important;
+}
+
+.btn-primary:focus {
+  color: white !important;
+  box-shadow: var(--shadow-xl), 0 0 0 4px rgba(74, 144, 226, 0.3);
 }
 
 .btn-primary::before {
@@ -278,23 +287,30 @@ body {
 }
 
 .btn-secondary {
-  background: white;
-  border: 2px solid #4A90E2;
+  background: white !important;
+  border: 2px solid #4A90E2 !important;
   border-radius: var(--radius-child);
-  color: #4A90E2;
+  color: #4A90E2 !important;
   font-weight: 600;
   padding: 14px 30px;
   font-size: 18px;
   box-shadow: var(--shadow-md);
   transition: all var(--duration-normal) ease;
   cursor: pointer;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .btn-secondary:hover {
-  background: #4A90E2;
-  color: white;
+  background: #4A90E2 !important;
+  color: white !important;
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  border-color: #4A90E2 !important;
+}
+
+.btn-secondary:focus {
+  box-shadow: var(--shadow-lg), 0 0 0 4px rgba(74, 144, 226, 0.3);
 }
 
 /* Premium Card Styles */

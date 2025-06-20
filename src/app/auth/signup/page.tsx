@@ -3,8 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { createClientSupabase } from '@/lib/supabase';
+import { AlertCircle } from 'lucide-react';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -28,6 +31,9 @@ export default function SignUpPage() {
     }));
   };
 
+  const router = useRouter();
+  const supabase = createClientSupabase();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -46,13 +52,52 @@ export default function SignUpPage() {
       return;
     }
 
-    // TODO: Implement Supabase authentication
     try {
-      // Placeholder for auth logic
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Sign up attempt:', formData);
+      // Sign up with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.parentName,
+            role: 'parent',
+            email_marketing_consent: formData.agreeToEmails,
+            terms_accepted_at: new Date().toISOString(),
+          }
+        }
+      });
+
+      if (authError) {
+        console.error('Auth error:', authError);
+        if (authError.message.includes('already registered')) {
+          setError('This email is already registered. Try signing in instead!');
+        } else if (authError.message.includes('invalid email')) {
+          setError('Please enter a valid email address.');
+        } else if (authError.message.includes('weak password')) {
+          setError('Password is too weak. Please choose a stronger password.');
+        } else {
+          setError('Something went wrong with your account creation. Let\'s try again!');
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      if (authData.user) {
+        console.log('User created in Supabase Auth:', authData.user.id);
+        
+        // Store form data for later use (after email verification)
+        localStorage.setItem('pendingUserData', JSON.stringify({
+          childName: formData.childName,
+          childGrade: formData.childGrade,
+          email_marketing_consent: formData.agreeToEmails
+        }));
+
+        // Always redirect to email verification since Supabase requires it
+        router.push('/auth/verify-email?email=' + encodeURIComponent(formData.email));
+      }
     } catch (err) {
-      setError('Something went wrong. Let\'s try again!');
+      console.error('Unexpected error:', err);
+      setError('Something unexpected went wrong. Please try again!');
     } finally {
       setIsLoading(false);
     }
@@ -238,23 +283,27 @@ export default function SignUpPage() {
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm">
-                {error}
+              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm animate-bounce-in flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Oops! Let's fix this:</p>
+                  <p>{error}</p>
+                </div>
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full btn-primary py-4 text-xl font-child"
+              className="w-full py-4 text-lg font-bold font-child bg-gradient-to-r from-green-500 via-blue-500 to-purple-600 text-white border-none shadow-xl hover:shadow-2xl hover:from-green-600 hover:via-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 focus:ring-4 focus:ring-blue-300"
               disabled={isLoading}
             >
               {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-3">
                   <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Creating your learning adventure...
+                  Creating your adventure...
                 </div>
               ) : (
-                'Start Free Trial - 14 Days! 🚀'
+                '🚀 Start Free Trial - 14 Days!'
               )}
             </Button>
           </form>
@@ -262,8 +311,11 @@ export default function SignUpPage() {
           <div className="mt-8 text-center">
             <p className="text-gray-600 text-sm mb-4">Already have an account?</p>
             <Link href="/auth/signin">
-              <Button className="btn-secondary px-8 py-3 text-lg font-child">
-                Sign In ✨
+              <Button 
+                variant="outline" 
+                className="px-8 py-3 text-lg font-semibold font-child border-2 border-blue-500 text-blue-600 bg-white hover:bg-blue-500 hover:text-white hover:border-blue-600 transition-all transform hover:scale-105 shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-200"
+              >
+                ✨ Sign In to Your Account
               </Button>
             </Link>
           </div>
