@@ -39,9 +39,9 @@ export default function RootLayout({
           rel="stylesheet" 
         />
       </head>
-      <body className="font-child antialiased bg-child-50 min-h-screen">
+      <body suppressHydrationWarning={true}>
         <ErrorBoundary level="critical">
-          <div className="min-h-screen flex flex-col">
+          <div className="font-child antialiased bg-child-50 min-h-screen flex flex-col">
             <Header variant="landing" />
             <main className="flex-1">
               {children}

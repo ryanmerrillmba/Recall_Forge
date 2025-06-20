@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -53,7 +53,12 @@ const mockDecks = [
 
 export default function DashboardPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const greeting = getTimeBasedGreeting();
+  const [greeting, setGreeting] = useState('Hello');
+
+  useEffect(() => {
+    // Set greeting on client side to avoid hydration mismatch
+    setGreeting(getTimeBasedGreeting());
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
